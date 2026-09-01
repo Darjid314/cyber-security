@@ -19,7 +19,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          pip install requests beautifulsoup4 gspread oauth2client
+          pip install requests beautifulsoup4 gspread google-auth
 
       - name: Execute Scraper
         env:
