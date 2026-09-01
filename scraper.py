@@ -7,29 +7,32 @@ from google.oauth2.service_account import Credentials
 import gspread
 import requests
 
-# 1. Google Sheet Authentication (Modern & Robust)
+# 1. Robust Google Authentication with Strict PEM Formatting
 scope = [
     'https://www.googleapis.com/auth/spreadsheets',
     'https://www.googleapis.com/auth/drive',
 ]
 
-# Secret read karein
 raw_creds = os.environ.get('GCP_SA_KEY', '')
 
 try:
   creds_dict = json.loads(raw_creds)
 except Exception:
-  # Agar JSON formatting me newline issue ho
   creds_dict = json.loads(raw_creds.replace('\n', '\\n'))
 
-# Ensure private key newline characters are intact
-if 'private_key' in creds_dict:
-  creds_dict['private_key'] = creds_dict['private_key'].replace('\\n', '\n')
+# Fix Private Key formatting
+pk = creds_dict.get('private_key', '')
+if pk:
+  # Agar escapes messed up hain toh pehle clean karein
+  pk = pk.replace('\\n', '\n')
+  # Extra unwanted spaces hatayein
+  lines = [line.strip() for line in pk.split('\n') if line.strip()]
+  creds_dict['private_key'] = '\n'.join(lines) + '\n'
 
 creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
 client = gspread.authorize(creds)
 
-# Sheet open karein (Aapki Google Sheet ka exact title)
+# Sheet Setup
 SHEET_NAME = 'Oman_Tenders_Tracker'
 sh = client.open(SHEET_NAME)
 
@@ -89,12 +92,10 @@ def is_cyber(text):
 
 # 3. Scrape Loop (Portal Pages)
 headers = {'User-Agent': 'Mozilla/5.0'}
-base_url = (
-    'https://etendering.tenderboard.gov.om/supplier/public/tender/list' # Portal URL
-)
+base_url = 'https://etendering.tenderboard.gov.om/supplier/public/tender/list'
 matched_rows = []
 
-print('Starting Scraper...')
+print('Starting Historical Cybersecurity Scraper...')
 for page in range(1, 40):
   try:
     res = requests.get(
